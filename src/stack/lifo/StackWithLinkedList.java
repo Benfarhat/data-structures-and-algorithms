@@ -9,6 +9,36 @@ public class StackWithLinkedList {
 
 }
 
+class ImplStackWithLinkedList {
+	private int length;
+	private ListNode topOfStack;
+	
+	public ImplStackWithLinkedList() {
+		length = 0;
+		topOfStack = null;
+	}
+	
+	public boolean isEmpty() {
+		return (length == 0);
+	}
+	
+	public int size() {
+		return length;
+	}
+	
+	public void push(int data) {
+		ListNode item = new ListNode(data);
+		item.setNext(topOfStack);
+		topOfStack = item;
+		length++;
+	}
+	
+	public int pop() {
+		if (isEmpty)
+			throw new EmptyStackException;
+	}
+}
+
 class ListNode {
 	public ListNode next;
 	public int data;
