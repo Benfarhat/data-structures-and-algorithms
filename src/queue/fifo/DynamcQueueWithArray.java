@@ -1,31 +1,18 @@
 package queue.fifo;
 
+import java.util.Random;
+import java.util.stream.IntStream;
+
 public class DynamcQueueWithArray {
 	public static void main(String[] args) {
 		DynamcQueueWithArrayImpl<String> queue = new DynamcQueueWithArrayImpl<String>(8);
-
-		queue.enQueue("A");
-		queue.enQueue("B");
-		queue.enQueue("C");
-		queue.enQueue("D");
-		queue.enQueue("E");
-		System.out.println(queue.info());
-		queue.deQueue();
-		System.out.println(queue.info());
-		queue.enQueue("F");
-		System.out.println(queue.info());
-		queue.deQueue();
-		queue.deQueue();
-		queue.deQueue();
-		queue.deQueue();
-		queue.deQueue();
-		System.out.println(queue.info());
-		queue.enQueue("G");
-		System.out.println(queue.info());
-		queue.enQueue("H");
-		System.out.println(queue.info());
-		queue.enQueue("I");
-		System.out.println(queue.info());
+		System.out.println(queue.info("STARTING"));
+		
+		new Random().ints(100,65,90).parallel().forEach(letter -> queue.enQueue(String.valueOf((char) (letter))));
+		System.out.println(queue.info("AFTER 100 ENQUEUE"));
+		
+		IntStream.rangeClosed(1, 82).parallel().forEach(i -> queue.deQueue());
+		System.out.println(queue.info("AFTER 82 DEQUEUE"));
 		
 	}
 }
@@ -35,6 +22,7 @@ class DynamcQueueWithArrayImpl<T> {
 	private int capacity, front, rear, size;
 	private static final int DEFAULT_CAPACITY = 8;
 
+	@SuppressWarnings("unchecked")
 	public DynamcQueueWithArrayImpl(int capacity) {
 		queue = (T[]) new Object[capacity];
 		this.capacity = capacity;
@@ -48,41 +36,33 @@ class DynamcQueueWithArrayImpl<T> {
 		System.out.println("Using default capacity value.");
 	}
 	
-	public void compact() {
-
-		if (isEmpty() || front == 0) {
-			return;
-		}
-		
-		T[] tempStack = queue;
-		System.arraycopy(tempStack, front, queue, 0, rear - front + 1);
-
-	}
-	public void enQueue(T item) {
+	public synchronized void enQueue(T item) {
 		if (isFull()) {
-			/*
-			if (size < capacity / 2) {
-				compact();
-			} else {
-				increaseCapacity();
-			}
-			*/
 			increaseCapacity();
 			System.out.println("overflow");
 		}
 		
 		rear++;
 		
+		if (rear >= queueSize() && size != queueSize()) {
+			rear = 0;
+		}
 		queue[rear] = item;
 		size++;
 	}	
 	
-	public T deQueue() {
+	public synchronized T deQueue() {
 		if (isEmpty()) {
 			System.out.println("underflow");
 			return null;
 		}
 		front++;
+		if (front > (queueSize() - 1)) {
+			front = 0;
+		} else {
+			
+		}
+		size--;
 		return queue[front];
 		
 	}
@@ -96,40 +76,44 @@ class DynamcQueueWithArrayImpl<T> {
 	}
 	
 	public boolean isEmpty() {
-		return false;
+		return size == 0;
 	}
 	
 	public boolean isFull() {
-		return false;
+		return size == queueSize();
 	}
 	
-	public void increaseCapacity() {
-		int newCapacity = queueSize()<<1;
-		/*
-		T[] resizedArray = (T[]) new Object[newCapacity];
+	@SuppressWarnings("unchecked")
+	public synchronized void increaseCapacity() {
+		capacity = queueSize()<<1;
+		T[] resizedArray = (T[]) new Object[capacity];
 
-		
-		System.arraycopy(stackArray, 0, 
-				resizedArray, 0, 
-				Math.min(stackArray.length, resizedArray.length));
-		this.capacity = capacity;
-		stackArray = resizedArray;*/
+		int tmpFront = front;
+		int index = -1;
+		while (true) {
+			resizedArray[++index] = queue[tmpFront++];
+			if (tmpFront == queueSize()) {
+				tmpFront = 0;
+			}
+			
+			if (size == (index + 1)) {
+				break;
+			}
+		}
+		queue = resizedArray;
+		front = 0;
+		rear = index;
 	}
 	
-	public void decreaseCapacity() {
-		
-	}
-
-
-	public String info() {
+	public String info(String msg) {
 		StringBuilder toString = new StringBuilder();
-		toString.append("\n=========:-------");
-		toString.append("\nsize     : " + size);
-		toString.append("\ncapacity : " + capacity);
-		toString.append("\nfront    : " + front);
-		toString.append("\nrear     : " + rear);
-		toString.append("\ncontent  : " + toString());
-		toString.append("\n=========:-------\n");
+		toString.append("\n~^~^~^~^~^~^~^~^~^~^~^~^[" + msg + "]^~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^~");
+		toString.append("\n| size     | " + size); 
+		toString.append("\n| capacity | " + capacity);
+		toString.append("\n| front    | " + front);
+		toString.append("\n| rear     | " + rear);
+		toString.append("\n| content  | " + toString());
+		toString.append("\n~^~^~^~^~^~^");
 		return toString.toString();
 	}
 	public String toString() {
