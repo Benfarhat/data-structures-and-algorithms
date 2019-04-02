@@ -1,8 +1,8 @@
 package linked.list;
 
 public class GenericListNode<T> {
-	public GenericListNode<T> next;
-	public T data;
+	private GenericListNode<T> next;
+	private T data;
 	public GenericListNode(T data) {
 		next = null;
 		this.data = data;
