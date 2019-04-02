@@ -6,14 +6,33 @@ import java.util.stream.IntStream;
 public class DynamcQueueWithArray {
 	public static void main(String[] args) {
 		DynamcQueueWithArrayImpl<String> queue = new DynamcQueueWithArrayImpl<String>(8);
-		System.out.println(queue.info("STARTING"));
+		System.out.println("You should see this queue like a sort of \"array shift\".\""
+				+ "it's like moving 4 consecutive cars on a road and to keep going, we built more road every time we reach the end");
+		System.out.println(queue.info("STARTING")); // front should be zero and rear -1
 		
-		new Random().ints(100,65,90).parallel().forEach(letter -> queue.enQueue(String.valueOf((char) (letter))));
-		System.out.println(queue.info("AFTER 100 ENQUEUE"));
+		new Random().ints(107,65,90).parallel().forEach(letter -> queue.enQueue(String.valueOf((char) (letter))));
+		System.out.println(queue.info("AFTER 101 ENQUEUE"));	// rear should be 106 (107 -1)
 		
-		IntStream.rangeClosed(1, 82).parallel().forEach(i -> queue.deQueue());
-		System.out.println(queue.info("AFTER 82 DEQUEUE"));
+		new Random().ints(32,65,90).parallel().forEach(letter -> queue.enQueue(String.valueOf((char) (letter))));
+		System.out.println(queue.info("AFTER 32 ENQUEUE")); // rear should be 138 (32 + 106)
 		
+		IntStream.rangeClosed(1, 1).parallel().forEach(i -> queue.deQueue());
+		System.out.println(queue.info("AFTER ONE DEQUEUE")); // front should be 1
+
+		IntStream.rangeClosed(1, 10).parallel().forEach(i -> queue.deQueue());
+		System.out.println(queue.info("AFTER 10 DEQUEUE")); // front should be 11 (10 + 1)
+
+		IntStream.rangeClosed(1, 100).parallel().forEach(i -> queue.deQueue());
+		System.out.println(queue.info("AFTER 100 DEQUEUE")); // front should be 111, here size is 28, 138 - 111 (closed) mean 138 - 111 + 1
+		
+		IntStream.rangeClosed(1, 27).parallel().forEach(i -> queue.deQueue());
+		System.out.println(queue.info("AFTER 27 DEQUEUE")); // front should be 138, size 1, mean the element in the 138th position is the only one in the queue	
+
+		IntStream.rangeClosed(1, 18).parallel().forEach(i -> queue.deQueue());
+		System.out.println(queue.info("AFTER 18 DEQUEUE")); // front should be 139, over this position queue (or pseudo circular queue and array shift) is empty
+
+		new Random().ints(20,65,90).parallel().forEach(letter -> queue.enQueue(String.valueOf((char) (letter))));
+		System.out.println(queue.info("AFTER 20 ENQUEUE")); // rear should be 158 and size 20
 	}
 }
 
@@ -39,14 +58,8 @@ class DynamcQueueWithArrayImpl<T> {
 	public synchronized void enQueue(T item) {
 		if (isFull()) {
 			increaseCapacity();
-			System.out.println("overflow");
 		}
-		
-		rear++;
-		
-		if (rear >= queueSize() && size != queueSize()) {
-			rear = 0;
-		}
+		rear = (++rear) % (queueSize() + 0);
 		queue[rear] = item;
 		size++;
 	}	
@@ -56,12 +69,10 @@ class DynamcQueueWithArrayImpl<T> {
 			System.out.println("underflow");
 			return null;
 		}
-		front++;
-		if (front > (queueSize() - 1)) {
-			front = 0;
-		} else {
-			
-		}
+		
+		front = (++front) % (queueSize() - 1);
+
+		
 		size--;
 		return queue[front];
 		
